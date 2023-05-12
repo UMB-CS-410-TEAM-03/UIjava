@@ -1,3 +1,9 @@
+/**
+ * Author: Yegor Kozubenko, Tasnim Anowar
+ * Purpose of this file is to extend the JFrame class
+ * with and add the worker thread that will poll the
+ * AtSign Secondary Server to fetch and push values.
+ */
 package app.opensesame;
 
 import javax.swing.*;
@@ -6,14 +12,11 @@ import org.apache.commons.lang3.ObjectUtils.Null;
 import org.atsign.client.api.AtClient;
 import org.atsign.common.Keys.SharedKey;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Ui extends JFrame {
     private JPanel contentPane;
@@ -22,13 +25,20 @@ public class Ui extends JFrame {
     private JButton actionButton;
     private JSlider compReSlider;
     private JLabel lblReStatus;
-    // private JButton reUpdateButton;
 
+    // Door States
     private final String[] doorStatusToString = new String[] { "opened", "closed", "opening", "closing" };
+    // Images
     private ImageIcon[] doorStatusImages = new ImageIcon[4];
 
+    // This function will create the JPanels with the required UI components and set
+    // the
+    // GUI visible and is responisble for starting a new worker thread that will
+    // poll the
+    // AtSign Server to get the latest changes and update the UI.
     public void initialize(AtClient atClient, SharedKey appEventsKey, SharedKey eventBusKey, SharedKey doorStatusKey,
             SharedKey reValueKey) {
+        // Load Images
         for (int i = 0; i < 4; i++) {
             doorStatusImages[i] = new ImageIcon(getClass().getResource("/" + doorStatusToString[i] + ".png"));
         }
@@ -64,6 +74,8 @@ public class Ui extends JFrame {
         actionButton.setFont(f);
         actionButton.setAlignmentX(CENTER_ALIGNMENT);
 
+        // Action Listener that will read the token from AtSign with eventBusKey and
+        // and the said action based on the State of the door to AtSign appEventsKey
         actionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -116,10 +128,6 @@ public class Ui extends JFrame {
         reVal.add(lblReStatus);
         botPanel.add(reVal);
         botPanel.add(Box.createRigidArea(new Dimension(0, 30)));
-        // reUpdateButton = new JButton("Update");
-        // reUpdateButton.setFont(f);
-        // reUpdateButton.setAlignmentX(CENTER_ALIGNMENT);
-        // botPanel.add(reUpdateButton);
         botPanel.add(Box.createRigidArea(new Dimension(0, 60)));
 
         contentPane.add(botPanel);
@@ -132,7 +140,11 @@ public class Ui extends JFrame {
         setMinimumSize(new Dimension(360, 580));
         setVisible(true);
 
+        // The Worker Thread responisble to polling the AtSign Server.
+
         SwingWorker<Null, String[]> worker = new SwingWorker<Null, String[]>() {
+
+            // Code to execute in the Worker Thread
             @Override
             protected Null doInBackground() throws Exception {
                 while (true) {
@@ -146,6 +158,7 @@ public class Ui extends JFrame {
                 }
             }
 
+            // Process the results from the worker thread
             @Override
             protected void process(List<String[]> chunks) {
                 String[] data = chunks.get(chunks.size() - 1);
